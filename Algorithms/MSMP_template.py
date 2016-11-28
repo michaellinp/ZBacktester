@@ -25,7 +25,7 @@ def define_transforms(context):  # Define transforms
     # select transforms required and make sure correct parameters are used
     context.transforms = [
         Transform(context, name='momentum', function=Transform.n_period_momentum, inputs=['price'],
-                  kwargs={'no_of_periods':3, 'period':'M'}, outputs=['momentum']),
+                  kwargs={'lookback':3, 'period':'M'}, outputs=['momentum']),
         # Transform(context, name='mom_A', function=ROCP, inputs=['price'], kwargs={'lookback': 43}, outputs=['mom_A']),
         # Transform(context, name='mom_B', function=ROCP, inputs=['price'], kwargs={'lookback': 21}, outputs=['mom_B']),
         # Transform(context, name='daily_returns', function=Transform.daily_returns, inputs=['price'], kwargs={},
