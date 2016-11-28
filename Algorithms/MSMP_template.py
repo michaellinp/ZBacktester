@@ -24,20 +24,20 @@ from talib import BBANDS, DEMA, EMA, HT_TRENDLINE, KAMA, MA, MAMA, MAVP, MIDPOIN
 def define_transforms(context):  # Define transforms
     # select transforms required and make sure correct parameters are used
     context.transforms = [
-        # Transform(context, name='momentum', function=Transform.n_period_momentum, inputs=['price'],
-        #           kwargs={'no_of_periods':3, 'period':'M'}, outputs=['R']),
-        Transform(context, name='mom_A', function=ROCP, inputs=['price'], kwargs={'lookback': 43}, outputs=['mom_A']),
-        Transform(context, name='mom_B', function=ROCP, inputs=['price'], kwargs={'lookback': 21}, outputs=['mom_B']),
-        Transform(context, name='daily_returns', function=Transform.daily_returns, inputs=['price'], kwargs={},
-                  outputs=['daily_returns']),
-        Transform(context, name='vol_C', function=STDDEV, inputs=['daily_returns'], kwargs={'lookback': 20},
-                  outputs=['vol_C']),
-        Transform(context, name='slope', function=Transform.slope, inputs=['price'], kwargs={'lookback': 100},
-                  outputs=['slope']),
+        Transform(context, name='momentum', function=Transform.n_period_momentum, inputs=['price'],
+                  kwargs={'no_of_periods':3, 'period':'M'}, outputs=['momentum']),
+        # Transform(context, name='mom_A', function=ROCP, inputs=['price'], kwargs={'lookback': 43}, outputs=['mom_A']),
+        # Transform(context, name='mom_B', function=ROCP, inputs=['price'], kwargs={'lookback': 21}, outputs=['mom_B']),
+        # Transform(context, name='daily_returns', function=Transform.daily_returns, inputs=['price'], kwargs={},
+        #           outputs=['daily_returns']),
+        # Transform(context, name='vol_C', function=STDDEV, inputs=['daily_returns'], kwargs={'lookback': 20},
+        #           outputs=['vol_C']),
+        # Transform(context, name='slope', function=Transform.slope, inputs=['price'], kwargs={'lookback': 100},
+        #           outputs=['slope']),
         # Transform(context, name='TMOM', function=Transform.momentum, inputs=['price'], kwargs={'lookback':43}, outputs=['TMOM']),
         # Transform(context, name='MA', function=SMA, inputs=['price'], args=[context.lookback_B], outputs=['MA']),
-        Transform(context, name='R', function=Transform.average_excess_return_momentum, inputs=['price'],
-                  kwargs={'lookback': 3}, outputs=['R']),
+        # Transform(context, name='R', function=Transform.average_excess_return_momentum, inputs=['price'],
+        #           kwargs={'lookback': 3}, outputs=['R']),
         # Transform(context, name='RMOM', function=Transform.momentum, inputs=['price'], kwargs={'lookback':43}, outputs=['RMOM']),
         # Transform(context, name='TMOM', function=Transform.excess_momentum, inputs=['price'],
         #           kwargs={'lookback':43}, outputs=['TMOM']),
@@ -65,16 +65,16 @@ def define_rules(context):  # Define rules
         Rule(context, name='smma_rule', rule="'price' < 'smma'"),
         # Rule(context, name='complex_rule', rule="'price' < smma or 'TMOM' < 0"),
         # Rule(context, name='momentum_rule', rule="'price' < 'MA'"),
-        Rule(context, name='EAA_rule', rule="'R' <= 0"),
+        # Rule(context, name='EAA_rule', rule="'R' <= 0"),
         # Rule(context, name='paa_rule', rule="'mom' <= 0"),
         # Rule(context, name='paa_filter', rule="'mom' > 0"),
         # Rule(context, name='momentum_rule1', rule="'price' < 'smma_12'"),
         # Rule(context, name='riskon', rule="'price' > 'smma_12'", apply_to=context.market_proxy),
         # Rule(context, name='riskoff', rule="'price' <= 'smma_12'", apply_to=context.market_proxy),
-        Rule(context, name='neutral', rule="'slope' <= 0.1 and 'slope' >= -0.1",
-             apply_to=context.market_proxy),
-        Rule(context, name='bull', rule="'slope' > 0.1", apply_to=context.market_proxy),
-        Rule(context, name='bear', rule="'slope' < -0.1", apply_to=context.market_proxy)
+        # Rule(context, name='neutral', rule="'slope' <= 0.1 and 'slope' >= -0.1",
+        #      apply_to=context.market_proxy),
+        # Rule(context, name='bull', rule="'slope' > 0.1", apply_to=context.market_proxy),
+        # Rule(context, name='bear', rule="'slope' < -0.1", apply_to=context.market_proxy)
     ]
 
     return context.algo_rules
@@ -127,70 +127,33 @@ def initialize(context):
 
     rs = StrategyParameters(context,
                             name='rs',
-                            portfolios=[symbols('MDY', 'EFA'), symbols('TLT', 'IEF', 'AGG')],
-                            portfolio_allocation_modes=['EW', 'RISK_TARGET'],
-                            portfolio_allocation_kwargs=[{}, {'lookback': 252, 'target_risk': 0.01, 'shorts': False}],
-                            security_weights=[None, None],
-                            portfolio_allocation_formulas=[None, None],
-                            scoring_methods=['RS', None],
-                            scoring_factors=[{'+mom_A': 0.65, '+mom_B': 0.35, '-vol_C': 0.},
-                                             None],
-                            n_tops=[1, 1],
-                            protection_modes=['BY_RULE', 'BY_RULE'],
-                            protection_rules=['smma_rule', 'smma_rule'],
-                            protection_formulas=[None, None],
-                            cash_proxies=[symbol('TLT'), symbol('SHY')],
+                            portfolios=[symbols('MDY', 'EFA')],
+                            portfolio_allocation_modes=['EW'],
+                            portfolio_allocation_kwargs=[{}],
+                            security_weights=[None],
+                            portfolio_allocation_formulas=[None],
+                            scoring_methods=['RS'],
+                            scoring_factors=[{'+momentum': 1.0}],
+                            n_tops=[1],
+                            protection_modes=['BY_RULE'],
+                            protection_rules=['smma_rule'],
+                            protection_formulas=[None],
+                            cash_proxies=[symbol('TLT')],
                             strategy_allocation_mode='FIXED',
-                            portfolio_weights=[0.6, 0.4],
+                            portfolio_weights=[1.0],
                             strategy_allocation_formula=None,
                             strategy_allocation_rule=None
                             )
-    # Strategy 2
 
-    eaa = StrategyParameters(context,
-                             name='eaa',
-                             portfolios=[symbols('EEM', 'IEF', 'IEV', 'MDY', 'QQQ', 'TLT', 'XLV')],
-                             portfolio_allocation_modes=['PROPORTIONAL'],
-                             portfolio_allocation_kwargs=[None],
-                             security_weights=[None],
-                             portfolio_allocation_formulas=[None],
-                             scoring_methods=['EAA'],
-                             #   Golden Offensive EAA: wi ~ zi = (1-ci) * ri^2
-                             # scoring_factors = [{'R': 2.0, 'C' : 1.0, 'V' : 0.0, 'S' : 1.0, 'eps' : 1e-6}],
-                             #   Golden Defensive EAA: wi ~ zi = squareroot( ri * (1-ci) )
-                             scoring_factors=[{'R': 1.0, 'C': 1.0, 'V': 0.0, 'S': 0.5, 'eps': 1e-6}],
-                             #  Equal Weighted Return: wi ~ zi = ri ^ eps
-                             # scoring_factors = [{'R': 1.0, 'C' : 1.0, 'V' : 0.0, 'S' : 1.0, 'eps' : 1e-6}],
-                             # Equal Weighted Hedged: wi ~ zi = ( ri * (1-ci) )^eps
-                             # scoring_factors = [{'R': 1.0, 'C' : 1.0, 'V' : 0.0, 'S' : 1.0, 'eps' : 1e-6}],
-                             #  Scoring Function Test:
-                             # scoring_factors = [{'R': 1.0, 'C' : 1.0, 'V' : 1.0, 'S' : 1.0, 'eps' : 0.0}],
-                             # scoring_factors = [{'R': 1.0, 'C' : 1.0, 'V' : 1.0, 'S' : 0.0, 'eps' :  1e-6}],
-                             n_tops=[2],
-                             protection_modes=['BY_FORMULA'],
-                             protection_rules=['EAA_rule'],
-                             protection_formulas=['DPF'],
-                             cash_proxies=[symbol('TLT')],
-                             strategy_allocation_mode='FIXED',
-                             portfolio_weights=[1.],
-                             strategy_allocation_formula=None,
-                             strategy_allocation_rule=None
-                             )
-
-    Configurator(context, define_transforms, define_rules, strategies=[rs, eaa])
+    Configurator(context, define_transforms, define_rules, strategies=[rs])
 
     ############################
     # configure algorithm
 
     algo = Algo(context,
-                strategies=[rs.strategy, eaa.strategy],
-                allocation_model=AllocationModel(context, mode='REGIME_EW', weights=None, formula=None),
-                regime=Regime(
-                    transitions={'0': ('neutral', ['rs']),
-                                 '1': ('bull', ['rs_p1']),
-                                 '-1': ('bear', ['eaa'])
-                                 }
-                ),
+                strategies=[rs.strategy],
+                allocation_model=AllocationModel(context, mode='EW', weights=None, formula=None),
+                regime=None
                 )
     ###########################################################################################################
     # generate algo data every day at close
@@ -217,7 +180,7 @@ def initialize(context):
 #MAIN ROUTINE
 
 capital_base = 10000
-start = dt.datetime(2008, 12, 1, 0, 0, 0, 0, pytz.utc)
+start = dt.datetime(2003, 1, 1, 0, 0, 0, 0, pytz.utc)
 end = dt.datetime(2016, 11, 1, 0, 0, 0, 0, pytz.utc)
 
 result = run_algorithm(start=start, end=end, initialize=initialize, \
