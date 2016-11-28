@@ -147,16 +147,16 @@ class Transform():
 
         h = context.dp[self.inputs[0]]
 
-        no_of_periods = self.kwargs['no_of_periods']
+        lookback = self.kwargs['lookback']
         period = self.kwargs['period']
 
         if period in ['W', 'M']:
             if h.index[-1].date() == get_datetime().date():
-                ds = h.resample('M', how='last').pct_change(no_of_periods).iloc[-1]
+                ds = h.resample('M', how='last').pct_change(lookback).iloc[-1]
             else:
-                ds = h.resample('M', how='last').pct_change(no_of_periods).iloc[-2]
+                ds = h.resample('M', how='last').pct_change(lookback).iloc[-2]
         else:
-            ds = h.pct_change(no_of_periods).iloc[-1]
+            ds = h.pct_change(lookback).iloc[-1]
 
         df = pd.DataFrame(0, index=h.index, columns=h.columns)
         df.iloc[-1] = ds
