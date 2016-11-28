@@ -4,6 +4,7 @@ from zipline.api import symbols
 from Quantopian.algorithm import AllocationModel, DownsideProtectionModel, Strategy, Portfolio, ScoringModel
 from Quantopian.Transform import Transform
 
+
 VALID_PORTFOLIO_ALLOCATION_MODES = ['EW', 'FIXED', 'PROPORTIONAL', 'MIN_VARIANCE', 'MAX_SHARPE', 'NOMINAL_SHARPE',
                                     'BY_FORMULA', 'RISK_PARITY', 'VOLATILITY_WEIGHTED', 'RISK_TARGET']
 VALID_PORTFOLIO_ALLOCATION_FORMULAS = [None]
@@ -17,7 +18,7 @@ NONE_NOT_ALLOWED = ['portfolios', 'portfolio_allocation_modes', 'cash_proxies', 
 class StrategyParameters ():
 
     '''
-    StrategyParameters hold the parameters for each strategy for a single or multistrategy algoritm
+    StrategyParameters hold the parameters for each strategy for a single or multistrategy algorithm
 
     calling:
 
@@ -91,10 +92,28 @@ class Configurator():
         # self.global_parameters = global_parameters
         # self._set_global_parameters (context)
         context.tranforms = define_transforms(context)
+        context.max_lookback = self._calculate_max_lookback (context)
         if Transform.average_excess_return_momentum in [t.function for t in context.transforms]:
             context.max_lookback = max(274, context.max_lookback)
         context.algo_rules = define_rules(context)
         self._configure_algo_strategies(context)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    def _calculate_max_lookback(self, context):
+        for t in context.transforms:
+            if 'lookback' in t.kwargs:
+                if 'period' in t.kwargs:
+                    if t.kwargs['period'] == 'W':
+                        lookback_days = 5 * t.kwargs['lookback']
+                    elif t.kwargs['period'] == 'M':
+                        lookback_days = 23 * t.kwargs['lookback']
+                    else:
+                        raise RuntimeError('UNKNOWN PERIOD "{}"'.format(t.kwargs['period']))
+                else:
+                    lookback_days = t.kwargs['lookback']
+                context.max_lookback = max(lookback_days, context.max_lookback)
+
+        return context.max_lookback
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def _configure_algo_strategies(self, context):
